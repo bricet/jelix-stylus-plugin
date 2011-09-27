@@ -1,10 +1,10 @@
 <?php
 /**
-* @package     
-* @subpackage  
+* @package
+* @subpackage
 * @author      Brice Tencé
 * @copyright   2011 Brice Tencé
-* @link        
+* @link
 * @licence     GNU Lesser General Public Licence see LICENCE file or http://www.gnu.org/licenses/lgpl.html
 */
 
@@ -89,7 +89,8 @@ class stylusHTMLResponsePlugin implements jIHTMLResponsePlugin {
                                 }
                             }
                             if( $compile ) {
-                                file_put_contents( $outputPath, $this->compileStylus($filePath) );
+                                //file will be written by nodejs itself because as of now, it seems there are troubles with redirection with nodejs under Windows
+                                $this->compileStylus($filePath, $outputPath);
                             }
                             $CSSLinkUrl = $CSSLinkUrl . $outputSuffix;
                         }
@@ -120,24 +121,32 @@ class stylusHTMLResponsePlugin implements jIHTMLResponsePlugin {
 
 
 
-    private function compileStylus( $filePath ) {
+    private function compileStylus( $filePath, $outputPath ) {
 
         global $gJConfig;
 
-        static $format = <<<'EOF'
-var stylus = require('stylus');
-var sys    = require('sys');
+        static $format =
+'
+var util   = require(process.binding(\'natives\').util ? \'util\' : \'sys\');
+var stylus = require(\'stylus\');
+var fs     = require(\'fs\');
 
-stylus(%s, %s).render(function(e, css){
+
+ stylus(%s, %s).render(function(e, css){
     if (e) {
         throw e;
     }
 
-    sys.print(css);
-    process.exit(0);
-});
+    fs.writeFileSync(%s, css, \'utf8\', function(err) {
+        if(err) {
+            sys.puts(err);
+        } else {
+            sys.puts("The file was saved!");
+        }
+    });
 
-EOF;
+    process.exit(0);
+ });';
 
         // parser options
         $stylusOptions = array();
@@ -157,18 +166,27 @@ EOF;
 
         $tempFile = tempnam(sys_get_temp_dir(), 'jelix_stylus');
 
+        //For Windows :
+        $filePath = str_replace( '/', DIRECTORY_SEPARATOR, $filePath );
+        $outputPath = str_replace( '/', DIRECTORY_SEPARATOR, $outputPath );
+
         file_put_contents($tempFile, sprintf($format,
             json_encode(file_get_contents($filePath)),
-            json_encode($stylusOptions)
+            json_encode($stylusOptions),
+            json_encode($outputPath)
         ));
 
+        $prod_open_options = array('suppress_errors' => true, 'binary_pipes' => true, 'bypass_shell' => false);
+
         $cmd = escapeshellarg($nodeBinPath) . ' ' . escapeshellarg($tempFile);
-        if( defined('PHP_WINDOWS_VERSION_MAJOR') ) {
-            $cmd = 'cmd /V:ON /E:ON /C "'.$nodeBinPath.'" ' . escapeshellarg($tempFile);
+        if( defined('PHP_WINDOWS_VERSION_MAJOR') || (defined('PHP_OS') && ( PHP_OS == 'WIN32' || PHP_OS == 'WINNT' || PHP_OS == 'Windows' )) ) {
+            $cmd = 'cmd /V:ON /E:ON /C '.$nodeBinPath.' ' . escapeshellarg($tempFile);
+            $proc_open_options['bypass_shell'] = true;
+            $env = null; //https://bugs.php.net/bug.php?id=50503
         }
 
         $descriptors = array(array('pipe', 'r'), array('pipe', 'w'), array('pipe', 'w'));
-        $process = proc_open($cmd, $descriptors, $pipes, jApp::wwwPath(), $env, array('suppress_errors' => true, 'binary_pipes' => true, 'bypass_shell' => false));
+        $process = proc_open($cmd, $descriptors, $pipes, jApp::wwwPath(), $env, $proc_open_options);
 
         foreach ($pipes as $pipe) {
             stream_set_blocking($pipe, false);
