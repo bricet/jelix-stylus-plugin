@@ -1,4 +1,4 @@
-What is jelix-stylusAssetic-plugin ?
+What is jelix-stylus-plugin ?
 ==============================
 
 This project is a plugin for [Jelix](http://jelix.org) PHP framework. It allows you to use easily [stylus](http://learnboost.github.com/stylus/) dynamic stylesheet language in Jelix.
