@@ -132,7 +132,7 @@ var stylus = require(\'stylus\');
 var fs     = require(\'fs\');
 
 
- stylus(%s, %s).render(function(e, css){
+stylus(%s, %s).render(function(e, css){
     if (e) {
         throw e;
     }
@@ -146,7 +146,8 @@ var fs     = require(\'fs\');
     });
 
     process.exit(0);
- });';
+});
+';
 
         // parser options
         $stylusOptions = array();
@@ -176,7 +177,7 @@ var fs     = require(\'fs\');
             json_encode($outputPath)
         ));
 
-        $prod_open_options = array('suppress_errors' => true, 'binary_pipes' => true, 'bypass_shell' => false);
+        $proc_open_options = array('suppress_errors' => true, 'binary_pipes' => true, 'bypass_shell' => false);
 
         $cmd = escapeshellarg($nodeBinPath) . ' ' . escapeshellarg($tempFile);
         if( defined('PHP_WINDOWS_VERSION_MAJOR') || (defined('PHP_OS') && ( PHP_OS == 'WIN32' || PHP_OS == 'WINNT' || PHP_OS == 'Windows' )) ) {
