@@ -131,8 +131,9 @@ var util   = require(process.binding(\'natives\').util ? \'util\' : \'sys\');
 var stylus = require(\'stylus\');
 var fs     = require(\'fs\');
 
+%s
 
-stylus(%s, %s).render(function(e, css){
+stylus(%s, %s)%s.render(function(e, css){
     if (e) {
         throw e;
     }
@@ -148,6 +149,15 @@ stylus(%s, %s).render(function(e, css){
     process.exit(0);
 });
 ';
+
+        $stylusLibs = (isset($gJConfig->jResponseHtml['stylus_libs']) ? explode(',', $gJConfig->jResponseHtml['stylus_libs']) : array());
+        $stylusLibsRequire = '';
+        $stylusLibsUse = '';
+
+        foreach( $stylusLibs as $stylusLib ) {
+            $stylusLibsRequire .= "var $stylusLib = require('$stylusLib'); ";
+            $stylusLibsUse .= ".use($stylusLib())";
+        }
 
         // parser options
         $stylusOptions = array();
@@ -172,8 +182,10 @@ stylus(%s, %s).render(function(e, css){
         $outputPath = str_replace( '/', DIRECTORY_SEPARATOR, $outputPath );
 
         file_put_contents($tempFile, sprintf($format,
+            $stylusLibsRequire,
             json_encode(file_get_contents($filePath)),
             json_encode($stylusOptions),
+            $stylusLibsUse,
             json_encode($outputPath)
         ));
 

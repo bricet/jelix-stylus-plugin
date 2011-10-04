@@ -62,6 +62,10 @@ If stylus\_compile's value is not valid or empty, its default value is onchange.
 You may also set stylus modle path for node with :
 `stylus_node_paths=/usr/local/lib/node_modules`
 
-And finally, you can set node's binary path with (default value is /usr/bin/node) :
+You can also set node's binary path with (default value is /usr/bin/node) :
 `stylus_nodejs_bin_path=/usr/local/bin/node`
+
+
+Stylus can use libraries, such as [nib](http://visionmedia.github.com/nib/). You can set a comma-separated list of those libs with :
+`stylus_libs="nib"`
 
